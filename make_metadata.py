@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 C = D_VECTOR(dim_input=80, dim_cell=768, dim_emb=256).eval().cuda()
-c_checkpoint = torch.load('3000000-BL.ckpt')
+c_checkpoint = torch.load('checkpoints/3000000-BL.ckpt')
 new_state_dict = OrderedDict()
 for key, val in c_checkpoint['model_b'].items():
     new_key = key[7:]
@@ -19,7 +19,7 @@ num_uttrs = 10
 len_crop = 128
 
 # Directory containing mel-spectrograms
-rootDir = './spmel'
+rootDir = '/home/dt4/mel_mw163/'
 dirName, subdirList, _ = next(os.walk(rootDir))
 print('Found directory: %s' % dirName)
 

@@ -119,6 +119,13 @@ class Solver(object):
                 for tag in keys:
                     log += ", {}: {:.4f}".format(tag, loss[tag])
                 print(log)
+
+            if (i + 1) % 500 == 0:
+                torch.save(self.G.state_dict(), "checkpoints/vocals.ckpt")
+
+
+
+
                 
 
     

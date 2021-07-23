@@ -2,7 +2,7 @@ from torch.utils import data
 import torch
 import numpy as np
 import pickle 
-import os    
+import os, shutil
        
 from multiprocessing import Process, Manager   
 
@@ -14,23 +14,26 @@ class Utterances(data.Dataset):
         """Initialize and preprocess the Utterances dataset."""
         self.root_dir = root_dir
         self.len_crop = len_crop
-        self.step = 10
+
         
         metaname = os.path.join(self.root_dir, "train.pkl")
         meta = pickle.load(open(metaname, "rb"))
-        
+        self.step = len(meta)
         """Load data using multiprocessing"""
-        manager = Manager()
-        meta = manager.list(meta)
-        dataset = manager.list(len(meta)*[None])  
-        processes = []
-        for i in range(0, len(meta), self.step):
-            p = Process(target=self.load_data, 
-                        args=(meta[i:i+self.step],dataset,i))  
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
+        # manager = Manager()
+        # meta = manager.list(meta)
+        # dataset = manager.list(len(meta)*[None])
+        # processes = []
+        meta = list(meta)
+        dataset = list(len(meta)*[None])
+        self.load_data(meta, dataset, 0)
+        # for i in range(0, len(meta), self.step):
+        #     p = Process(target=self.load_data,
+        #                 args=(meta[i:i+self.step],dataset,i))
+        #     p.start()
+        #     processes.append(p)
+        # for p in processes:
+        #     p.join()
             
         self.train_dataset = list(dataset)
         self.num_tokens = len(self.train_dataset)
@@ -39,14 +42,22 @@ class Utterances(data.Dataset):
         
         
     def load_data(self, submeta, dataset, idx_offset):  
-        for k, sbmt in enumerate(submeta):    
+        for k, sbmt in enumerate(submeta):
+            # print(submeta)
             uttrs = len(sbmt)*[None]
             for j, tmp in enumerate(sbmt):
                 if j < 2:  # fill in speaker id and embedding
                     uttrs[j] = tmp
                 else: # load the mel-spectrograms
-                    uttrs[j] = np.load(os.path.join(self.root_dir, tmp))
-            dataset[idx_offset+k] = uttrs
+                    uttrs[j] = os.path.join(self.root_dir, tmp)
+
+            try:
+                dataset[idx_offset+k] = uttrs
+            except Exception as e:
+                p = os.path.join(self.root_dir, tmp)
+                print(p)
+                os.remove(p)
+
                    
         
     def __getitem__(self, index):
@@ -57,7 +68,7 @@ class Utterances(data.Dataset):
         
         # pick random uttr with random crop
         a = np.random.randint(2, len(list_uttrs))
-        tmp = list_uttrs[a]
+        tmp = np.load(list_uttrs[a])
         if tmp.shape[0] < self.len_crop:
             len_pad = self.len_crop - tmp.shape[0]
             uttr = np.pad(tmp, ((0,len_pad),(0,0)), 'constant')
