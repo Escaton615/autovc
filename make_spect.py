@@ -26,7 +26,6 @@ def pySTFT(x, fft_length=1024, hop_length=256):
 
     fft_window = get_window('hann', fft_length, fftbins=True)
     result = np.fft.rfft(fft_window * result, n=fft_length).T
-    # print(result.dtype)
     return np.abs(result)
 
 
